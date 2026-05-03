@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureAuth — Final Project</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f0f4f8;
+    --bg2:       #ffffff;
+    --bg3:       #e8edf2;
+    --border:    #d0d7de;
+    --accent:    #1a73e8;
+    --accent2:   #1e8a3c;
+    --danger:    #d93025;
+    --warning:   #b06000;
+    --text:      #1a1f2e;
+    --muted:     #5f6b7a;
+    --card:      #ffffff;
+    --radius:    12px;
+    --font-body: 'Outfit', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-display: 'DM Serif Display', serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: flex; }
+
+ 
+  #page-login {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #page-login::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(26,115,232,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26,115,232,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes gridPulse {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .login-container {
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .login-logo .shield {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    border-radius: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(26,115,232,0.3);
+    animation: shieldGlow 3s ease-in-out infinite;
+    box-shadow: 0 8px 24px rgba(26,115,232,0.25);
+  }
+
+  @keyframes shieldGlow {
+    0%,100% { box-shadow: 0 0 20px rgba(26,115,232,0.2); }
+    50% { box-shadow: 0 0 40px rgba(26,115,232,0.4); }
+  }
+
+  .login-logo h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .login-logo p {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  .form-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+  }
+
+  .form-group input.error {
+    border-color: var(--danger);
+  }
+
+  .input-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-login:hover { background: #1557b0; transform: translateY(-1px); }
+  .btn-login:active { transform: translateY(0); }
+  .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  .alert.danger {
+    background: rgba(248,81,73,0.12);
+    border: 1px solid rgba(248,81,73,0.3);
+    color: #ff7b72;
+    display: block;
+  }
+
+  .alert.success {
+    background: rgba(63,185,80,0.12);
+    border: 1px solid rgba(63,185,80,0.3);
+    color: #56d364;
+    display: block;
+  }
+
+  .demo-creds {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg3);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .demo-creds code {
+    font-family: var(--font-mono);
+    color: var(--accent2);
+    font-size: 0.8rem;
+  }
+
+  .auth-toggle {
+    display: flex;
+    margin-bottom: 1.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .auth-toggle-btn {
+    flex: 1;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+  }
+
+  .auth-toggle-btn.active {
+    background: #ffffff;
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
+
+  .security-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    justify-content: center;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 500;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .badge.green { border-color: rgba(63,185,80,0.4); color: var(--accent2); }
+  .badge.blue  { border-color: rgba(88,166,255,0.4); color: var(--accent); }
+
+  #page-dashboard {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  .topbar-brand {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 2px solid rgba(26,115,232,0.3);
+    color: #ffffff;
+  }
+
+  .user-name {
+    font-size: 0.875rem;
+    color: var(--text);
+  }
+
+  .btn-logout {
+    padding: 0.35rem 0.9rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-logout:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .dashboard-body {
+    padding: 2.5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .welcome-banner {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    border: 1px solid rgba(26,115,232,0.2);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .welcome-text h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+  }
+
+  .welcome-text p {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+  }
+
+  .login-status-pill {
+    background: rgba(63,185,80,0.15);
+    border: 1px solid rgba(63,185,80,0.3);
+    color: var(--accent2);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #1a73e8;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #d0d7de;
+  }
+
+  .section { margin-bottom: 2.5rem; }
+
+  .security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .sec-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .sec-card:hover { border-color: rgba(26,115,232,0.4); box-shadow: 0 4px 16px rgba(26,115,232,0.1); }
+
+  .sec-card-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sec-card h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .sec-card p {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .code-block {
+    background: #f6f8fa;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #1e8a3c;
+    margin-top: 0.75rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .code-comment { color: #8a9199; }
+  .code-key    { color: #0550ae; }
+  .code-string { color: #0a3069; }
+  .code-val    { color: #953800; }
+
+  .webgoat-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .webgoat-header {
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .webgoat-header .lesson-icon {
+    width: 52px;
+    height: 52px;
+    background: rgba(63,185,80,0.2);
+    border: 1px solid rgba(63,185,80,0.3);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .webgoat-header h3 {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--text);
+  }
+
+  .webgoat-header .lesson-meta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .webgoat-body { padding: 1.5rem; }
+
+  .lesson-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    background: #f0f4f8;
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .lesson-tab {
+    flex: 1;
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+  }
+
+  .lesson-tab.active {
+    background: #ffffff;
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .lesson-content { font-size: 0.875rem; line-height: 1.75; color: var(--muted); }
+  .lesson-content h5 { color: var(--text); font-size: 0.95rem; margin: 1.25rem 0 0.5rem; }
+  .lesson-content p { margin-bottom: 0.75rem; }
+
+  .vuln-demo {
+    background: #fff5f5;
+    border: 1px solid rgba(217,48,37,0.25);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+
+  .vuln-demo .bad-code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #b91c1c;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .vuln-demo .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--danger);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .safe-demo {
+    background: #f0faf2;
+    border: 1px solid rgba(30,138,60,0.25);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+
+  .safe-demo .good-code {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #166534;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .safe-demo .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent2);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 1rem;
+    position: relative;
+    padding-bottom: 1.25rem;
+  }
+
+  .timeline-item:last-child { padding-bottom: 0; }
+
+  .tl-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tl-dot.attack { background: rgba(248,81,73,0.2); border: 1px solid rgba(248,81,73,0.4); }
+  .tl-dot.defend { background: rgba(63,185,80,0.2); border: 1px solid rgba(63,185,80,0.4); }
+
+  .timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .tl-content { padding-top: 0.4rem; }
+  .tl-content strong { font-size: 0.875rem; color: var(--text); }
+  .tl-content p { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
+
+  .completion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(63,185,80,0.12);
+    border: 1px solid rgba(63,185,80,0.3);
+    color: var(--accent2);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 1rem;
+  }
+
+  .vuln-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .vuln-card {
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    border: 1px solid;
+  }
+
+  .vuln-card.red {
+    background: rgba(248,81,73,0.06);
+    border-color: rgba(248,81,73,0.2);
+  }
+
+  .vuln-card.amber {
+    background: rgba(227,179,65,0.06);
+    border-color: rgba(227,179,65,0.2);
+  }
+
+  .vuln-card.green {
+    background: rgba(63,185,80,0.06);
+    border-color: rgba(63,185,80,0.2);
+  }
+
+  .vuln-card h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .vuln-card.red h4   { color: #ff7b72; }
+  .vuln-card.amber h4 { color: var(--warning); }
+  .vuln-card.green h4 { color: var(--accent2); }
+
+  .vuln-card ul {
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding-left: 1rem;
+    line-height: 1.8;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+    background: #ffffff;
+  }
+</style>
+</head>
+<body>
+
+<div id="page-login" class="page active">
+  <div class="login-container">
+    <div class="login-logo">
+      <div class="shield">🛡️</div>
+      <h1>SecureAuth</h1>
+      <p>Welcome</p>
+    </div>
+
+    <div class="login-card">
+      <div class="auth-toggle">
+        <button class="auth-toggle-btn active" id="tab-login-btn" type="button">Sign In</button>
+        <button class="auth-toggle-btn" id="tab-register-btn" type="button">Create Account</button>
+      </div>
+
+      <div id="panel-login" class="auth-panel active">
+        <div id="login-alert" class="alert"></div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" autocomplete="off" maxlength="60">
+          <div class="input-hint" id="username-hint"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="off" maxlength="100">
+          <div class="input-hint" id="password-hint"></div>
+        </div>
+
+        <button class="btn-login" id="btn-login" type="button">Sign In</button>
+      </div>
+
+      <div id="panel-register" class="auth-panel">
+        <div id="register-alert" class="alert"></div>
+
+        <div class="form-group">
+          <label for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" placeholder="Enter your full name" autocomplete="off" maxlength="80">
+          <div class="input-hint" id="reg-name-hint"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-username">Username</label>
+          <input type="text" id="reg-username" placeholder="Choose a username" autocomplete="off" maxlength="60">
+          <div class="input-hint" id="reg-username-hint"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" placeholder="Min. 8 characters" autocomplete="off" maxlength="100">
+          <div class="input-hint" id="reg-password-hint"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-confirm">Confirm Password</label>
+          <input type="password" id="reg-confirm" placeholder="Re-enter your password" autocomplete="off" maxlength="100">
+          <div class="input-hint" id="reg-confirm-hint"></div>
+        </div>
+
+        <button class="btn-login" id="btn-register" type="button">Create Account</button>
+      </div>
+    </div>
+
+   
+  </div>
+</div>
+
+
+<div id="page-dashboard" class="page">
+
+  <nav class="topbar">
+    <div class="topbar-brand">🛡️ SecureAuth</div>
+    <div class="topbar-user">
+      <div class="user-avatar" id="user-avatar">S</div>
+      <span class="user-name" id="user-name-display">student</span>
+      <button class="btn-logout" id="btn-logout" type="button">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-body">
+
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h2>Welcome back, <span id="welcome-name">Student</span>! 🎓</h2>
+        <p>.</p>
+      </div>
+      <div class="login-status-pill">
+        <span class="dot"></span> 
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">⚙️ Requirement 2 — Security Implementation Explained</div>
+      <div class="security-grid">
+
+        <div class="sec-card">
+          <div class="sec-card-icon">🔐</div>
+          <h4>Password Hashing (bcrypt)</h4>
+          <p>Passwords are never stored as plain text. They are hashed using <strong>bcrypt</strong>, which adds a random salt and applies 10+ rounds of processing.</p>
+          <div class="code-block"><span class="code-comment">// Simulated bcrypt hash (Node.js example)</span>
+<span class="code-key">const</span> hash = <span class="code-string">bcrypt</span>.hash(password, <span class="code-val">10</span>);
+<span class="code-comment">// Stored in DB: "$2b$10$N9qo8u..."</span>
+<span class="code-comment">// Original password: never recoverable</span></div>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-card-icon">🧹</div>
+          <h4>Input Validation & Sanitization</h4>
+          <p>All inputs are validated before processing. Special characters are stripped to prevent SQL Injection and XSS attacks.</p>
+          <div class="code-block"><span class="code-comment">// Validation rules applied:</span>
+<span class="code-key">username</span>: letters, numbers only
+<span class="code-key">password</span>: min 8 chars required
+<span class="code-key">HTML tags</span>: &lt;script&gt; stripped out
+<span class="code-key">SQL chars</span>: ' ; -- removed</div>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-card-icon">🚫</div>
+          <h4>Safe Error Messages</h4>
+          <p>Login errors never reveal whether the username or password is wrong individually — this prevents user enumeration attacks.</p>
+          <div class="code-block"><span class="code-comment">// BAD (reveals info):</span>
+<span class="code-string">"User not found"</span>
+<span class="code-string">"Wrong password"</span>
+
+<span class="code-comment">// GOOD (vague, safe):</span>
+<span class="code-string">"Invalid credentials"</span></div>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-card-icon">🔑</div>
+          <h4>Session Management</h4>
+          <p>After login, a secure session token is generated. The token is validated on every request and destroyed on logout.</p>
+          <div class="code-block"><span class="code-comment">// Session token example</span>
+<span class="code-key">token</span>: <span class="code-string">"a8f3c9d1..."</span> (random)
+<span class="code-key">expires</span>: <span class="code-val">30 minutes</span>
+<span class="code-key">httpOnly</span>: <span class="code-val">true</span> (JS can't read)
+<span class="code-key">secure</span>: <span class="code-val">true</span> (HTTPS only)</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📚 Requirement 3 — WebGoat Lesson: SQL Injection (Introduction)</div>
+
+      <div class="webgoat-card">
+        <div class="webgoat-header">
+          <div class="lesson-icon">💉</div>
+          <div>
+            <h3>SQL Injection — Introduction</h3>
+            <div class="lesson-meta">WebGoat Lesson &bull; Category: Injection Flaws &bull; Difficulty: Beginner</div>
+          </div>
+        </div>
+
+        <div class="webgoat-body">
+          <div class="lesson-tabs">
+            <button class="lesson-tab active" type="button">What is It?</button>
+            <button class="lesson-tab" type="button">Attack Demo</button>
+            <button class="lesson-tab" type="button">Defense</button>
+            <button class="lesson-tab" type="button">Completed ✓</button>
+          </div>
+
+
+          <div id="tab-what" class="tab-panel active">
+            <div class="lesson-content">
+              <p>SQL Injection (SQLi) is one of the most critical and widespread web vulnerabilities, consistently listed in the <strong>OWASP Top 10</strong>. It occurs when untrusted user input is inserted directly into a database query without proper sanitization.</p>
+              <h5>How does it happen?</h5>
+              <p>When a login form directly concatenates user input into an SQL query, an attacker can type SQL code as their "username" and manipulate the query logic.</p>
+              <div class="vuln-demo">
+                <div class="label">⚠ Vulnerable Query (never do this)</div>
+                <div class="bad-code">-- User types: admin' OR '1'='1
+SELECT * FROM users
+  WHERE username = 'admin' OR '1'='1'
+  AND password = 'anything';
+
+-- Result: Returns ALL users! Attacker logs in as admin.</div>
+              </div>
+              <p>The query always evaluates to TRUE because <code>'1'='1'</code> is always true, bypassing authentication completely.</p>
+            </div>
+          </div>
+
+          <div id="tab-demo" class="tab-panel">
+            <div class="lesson-content">
+              <h5>Common SQL Injection Payloads</h5>
+              <p>These are the types of inputs attackers try in vulnerable login forms:</p>
+
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="tl-dot attack">💀</div>
+                  <div class="tl-content">
+                    <strong>Bypass Login: <code>' OR '1'='1</code></strong>
+                    <p>Makes the WHERE clause always TRUE. Logs in without any valid credentials.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot attack">💀</div>
+                  <div class="tl-content">
+                    <strong>Comment Attack: <code>admin'--</code></strong>
+                    <p>The <code>--</code> comments out the rest of the SQL, skipping the password check entirely.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot attack">💀</div>
+                  <div class="tl-content">
+                    <strong>Data Extraction: <code>UNION SELECT</code></strong>
+                    <p>Attacker can extract usernames and passwords from the database by appending a UNION query.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot attack">💀</div>
+                  <div class="tl-content">
+                    <strong>Drop Table: <code>'; DROP TABLE users;--</code></strong>
+                    <p>Deletes entire database tables, causing catastrophic data loss.</p>
+                  </div>
+                </div>
+              </div>
+
+              <p style="margin-top:1rem;"><strong style="color:var(--warning);">If this app had no security:</strong> typing <code>' OR '1'='1</code> in the username field would grant instant admin access to anyone.</p>
+            </div>
+          </div>
+
+          <div id="tab-defense" class="tab-panel">
+            <div class="lesson-content">
+              <h5>How this application prevents SQL Injection</h5>
+
+              <div class="vuln-demo">
+                <div class="label">⚠ Vulnerable approach</div>
+                <div class="bad-code">// String concatenation — DANGEROUS
+query = "SELECT * FROM users WHERE
+  username = '" + username + "'
+  AND password = '" + password + "'";</div>
+              </div>
+
+              <div class="safe-demo">
+                <div class="label">✓ Safe approach — Parameterized Queries</div>
+                <div class="good-code">// Prepared statement — SAFE
+query = "SELECT * FROM users
+  WHERE username = ? AND password = ?";
+db.execute(query, [username, passwordHash]);
+
+// The database treats ? as DATA, not as code.
+// ' OR '1'='1 becomes a literal string — harmless!</div>
+              </div>
+
+              <h5>Additional layers in this app</h5>
+              <div class="vuln-grid" style="margin-top:0.75rem;">
+                <div class="vuln-card green">
+                  <h4>✓ Input Validation</h4>
+                  <ul>
+                    <li>Username: alphanumeric only</li>
+                    <li>Password: minimum length enforced</li>
+                    <li>Special SQL chars rejected</li>
+                  </ul>
+                </div>
+                <div class="vuln-card green">
+                  <h4>✓ Password Hashing</h4>
+                  <ul>
+                    <li>bcrypt with salt rounds = 10</li>
+                    <li>Even if DB is stolen, hashes are useless</li>
+                    <li>Timing-safe comparison used</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-complete" class="tab-panel">
+            <div class="lesson-content">
+              <h5>Lesson Completion Record</h5>
+              <p>This WebGoat lesson has been studied and completed as part of the final project requirement. The following concepts were demonstrated and understood:</p>
+
+              <div class="timeline" style="margin-top:1rem;">
+                <div class="timeline-item">
+                  <div class="tl-dot defend">✓</div>
+                  <div class="tl-content">
+                    <strong>Understanding what SQL Injection is</strong>
+                    <p>Studied how malicious SQL can be embedded in user inputs to alter query logic.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot defend">✓</div>
+                  <div class="tl-content">
+                    <strong>Performed attack in WebGoat sandbox</strong>
+                    <p>Successfully completed the SQLi lab by bypassing login using <code>' OR '1'='1</code> payload.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot defend">✓</div>
+                  <div class="tl-content">
+                    <strong>Implemented defenses in this project</strong>
+                    <p>Applied parameterized queries, input validation, bcrypt hashing, and safe error messages.</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="tl-dot defend">✓</div>
+                  <div class="tl-content">
+                    <strong>Explained security improvements</strong>
+                    <p>Documented how each measure prevents specific attack vectors in the Vulnerability Awareness section below.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="completion-badge">
+                ✅ WebGoat Lesson Completed — SQL Injection Introduction
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔍 Requirement 4 — Vulnerability Awareness</div>
+
+      <div class="vuln-grid">
+        <div class="vuln-card red">
+          <h4>⚠ What if security was NOT implemented?</h4>
+          <ul>
+            <li>Attackers bypass login with SQL payloads</li>
+            <li>Plain-text passwords stolen in a data breach</li>
+            <li>Entire user database exposed or deleted</li>
+            <li>Attacker takes over any account via enumeration</li>
+            <li>XSS scripts injected into the page</li>
+          </ul>
+        </div>
+
+        <div class="vuln-card amber">
+          <h4>⚡ How vulnerabilities affect this system</h4>
+          <ul>
+            <li>SQL Injection → authentication bypass</li>
+            <li>Broken auth → stolen session hijacking</li>
+            <li>Plain-text passwords → credential theft</li>
+            <li>Verbose errors → user enumeration attack</li>
+            <li>Missing validation → XSS script injection</li>
+          </ul>
+        </div>
+
+        <div class="vuln-card green">
+          <h4>✓ How our measures prevent attacks</h4>
+          <ul>
+            <li>Parameterized queries block SQL Injection</li>
+            <li>bcrypt hashing protects even if DB leaked</li>
+            <li>Input validation strips malicious characters</li>
+            <li>Generic errors prevent user enumeration</li>
+            <li>Secure session tokens prevent hijacking</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    SecureAuth — IT Security Final Project &bull; Built with HTML, CSS & JavaScript &bull; WebGoat Lesson: SQL Injection
+  </footer>
+</div>
+<script>
+  const btnLogin = document.getElementById('btn-login');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const loginAlert = document.getElementById('login-alert');
+  const usernameHint = document.getElementById('username-hint');
+  const passwordHint = document.getElementById('password-hint');
+
+  const btnRegister = document.getElementById('btn-register');
+  const regNameInput = document.getElementById('reg-name');
+  const regUsernameInput = document.getElementById('reg-username');
+  const regPasswordInput = document.getElementById('reg-password');
+  const regConfirmInput = document.getElementById('reg-confirm');
+  const registerAlert = document.getElementById('register-alert');
+
+  const tabLoginBtn = document.getElementById('tab-login-btn');
+  const tabRegisterBtn = document.getElementById('tab-register-btn');
+  const panelLogin = document.getElementById('panel-login');
+  const panelRegister = document.getElementById('panel-register');
+
+  function setHint(el, input, msg) {
+    el.textContent = msg;
+    el.style.color = msg ? '#ff7b72' : '';
+    input.classList.toggle('error', !!msg);
+  }
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+  }
+
+  function switchTab(tab) {
+    if (tab === 'login') {
+      tabLoginBtn.classList.add('active');
+      tabRegisterBtn.classList.remove('active');
+      panelLogin.classList.add('active');
+      panelRegister.classList.remove('active');
+    } else {
+      tabRegisterBtn.classList.add('active');
+      tabLoginBtn.classList.remove('active');
+      panelRegister.classList.add('active');
+      panelLogin.classList.remove('active');
+    }
+  }
+
+  tabLoginBtn.addEventListener('click', () => switchTab('login'));
+  tabRegisterBtn.addEventListener('click', () => switchTab('register'));
+
+  function validateLogin() {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+    let valid = true;
+
+    if (!username) {
+      setHint(usernameHint, usernameInput, 'Username is required');
+      valid = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setHint(usernameHint, usernameInput, 'Only letters, numbers and underscores allowed');
+      valid = false;
+    } else {
+      setHint(usernameHint, usernameInput, '');
+    }
+
+    if (!password) {
+      setHint(passwordHint, passwordInput, 'Password is required');
+      valid = false;
+    } else if (password.length < 8) {
+      setHint(passwordHint, passwordInput, 'Password must be at least 8 characters');
+      valid = false;
+    } else {
+      setHint(passwordHint, passwordInput, '');
+    }
+
+    return valid;
+  }
+
+  function validateRegister() {
+    const name = regNameInput.value.trim();
+    const username = regUsernameInput.value.trim();
+    const password = regPasswordInput.value.trim();
+    const confirm = regConfirmInput.value.trim();
+    let valid = true;
+
+    if (!name) {
+      setHint(document.getElementById('reg-name-hint'), regNameInput, 'Full name is required');
+      valid = false;
+    } else {
+      setHint(document.getElementById('reg-name-hint'), regNameInput, '');
+    }
+
+    if (!username) {
+      setHint(document.getElementById('reg-username-hint'), regUsernameInput, 'Username is required');
+      valid = false;
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setHint(document.getElementById('reg-username-hint'), regUsernameInput, 'Only letters, numbers and underscores allowed');
+      valid = false;
+    } else {
+      setHint(document.getElementById('reg-username-hint'), regUsernameInput, '');
+    }
+
+    if (!password) {
+      setHint(document.getElementById('reg-password-hint'), regPasswordInput, 'Password is required');
+      valid = false;
+    } else if (password.length < 8) {
+      setHint(document.getElementById('reg-password-hint'), regPasswordInput, 'Minimum 8 characters');
+      valid = false;
+    } else {
+      setHint(document.getElementById('reg-password-hint'), regPasswordInput, '');
+    }
+
+    if (!confirm) {
+      setHint(document.getElementById('reg-confirm-hint'), regConfirmInput, 'Please confirm your password');
+      valid = false;
+    } else if (confirm !== password) {
+      setHint(document.getElementById('reg-confirm-hint'), regConfirmInput, 'Passwords do not match');
+      valid = false;
+    } else {
+      setHint(document.getElementById('reg-confirm-hint'), regConfirmInput, '');
+    }
+
+    return valid;
+  }
+
+  async function handleLogin(username, password) {
+    try {
+      btnLogin.disabled = true;
+      btnLogin.textContent = 'Authenticating...';
+
+      const response = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loginAlert.className = 'alert success';
+        loginAlert.textContent = 'Login successful! Redirecting...';
+        loginAlert.style.display = 'block';
+
+        document.getElementById('user-name-display').textContent = username;
+        document.getElementById('welcome-name').textContent = username;
+        document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
+
+        setTimeout(() => {
+          showPage('page-dashboard');
+          loginAlert.style.display = 'none';
+          usernameInput.value = '';
+          passwordInput.value = '';
+        }, 1000);
+      } else {
+        loginAlert.className = 'alert danger';
+        loginAlert.textContent = data.message || 'Invalid credentials';
+        loginAlert.style.display = 'block';
+      }
+    } catch (error) {
+      loginAlert.className = 'alert danger';
+      loginAlert.textContent = 'Network error. Please check your connection.';
+      loginAlert.style.display = 'block';
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'Sign In Securely';
+    }
+  }
+
+  async function handleRegister() {
+    try {
+      btnRegister.disabled = true;
+      btnRegister.textContent = 'Creating Account...';
+
+      const response = await fetch('http://localhost:3000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: regNameInput.value.trim(),
+          username: regUsernameInput.value.trim(),
+          password: regPasswordInput.value.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        registerAlert.className = 'alert success';
+        registerAlert.textContent = 'Account created! You can now sign in.';
+        registerAlert.style.display = 'block';
+        regNameInput.value = '';
+        regUsernameInput.value = '';
+        regPasswordInput.value = '';
+        regConfirmInput.value = '';
+        setTimeout(() => {
+          registerAlert.style.display = 'none';
+          switchTab('login');
+        }, 1500);
+      } else {
+        registerAlert.className = 'alert danger';
+        registerAlert.textContent = data.message || 'Registration failed';
+        registerAlert.style.display = 'block';
+      }
+    } catch (error) {
+      registerAlert.className = 'alert danger';
+      registerAlert.textContent = 'Network error. Please check your connection.';
+      registerAlert.style.display = 'block';
+    } finally {
+      btnRegister.disabled = false;
+      btnRegister.textContent = 'Create Account';
+    }
+  }
+
+  btnLogin.addEventListener('click', () => {
+    if (!validateLogin()) return;
+    handleLogin(usernameInput.value.trim(), passwordInput.value.trim());
+  });
+
+  btnRegister.addEventListener('click', () => {
+    if (!validateRegister()) return;
+    handleRegister();
+  });
+
+  [usernameInput, passwordInput].forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') btnLogin.click();
+    });
+  });
+
+  [regNameInput, regUsernameInput, regPasswordInput, regConfirmInput].forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') btnRegister.click();
+    });
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    showPage('page-login');
+    switchTab('login');
+    loginAlert.style.display = 'none';
+    usernameInput.value = '';
+    passwordInput.value = '';
+    setHint(usernameHint, usernameInput, '');
+    setHint(passwordHint, passwordInput, '');
+  });
+</script>
+
+</body>
+</html>
