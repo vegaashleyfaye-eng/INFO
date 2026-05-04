@@ -18,8 +18,10 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `secureauth`
+-- Create and use database
 --
+CREATE DATABASE IF NOT EXISTS `secureauth` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `secureauth`;
 
 -- --------------------------------------------------------
 
