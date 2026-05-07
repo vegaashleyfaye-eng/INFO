@@ -11,6 +11,16 @@ const pool = new Pool({
 
 async function init() {
   try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL
+      )
+    `);
+    console.log('✅ Checked/Created users table');
+
     const result = await pool.query('SELECT COUNT(*) AS count FROM users');
     if (parseInt(result.rows[0].count, 10) === 0) {
       const hash = await bcrypt.hash('SecurePass123!', SALT_ROUNDS);
